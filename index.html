@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#123d72">
+  <meta name="description" content="Professional EMI calculator with automatic IRR, processing fee and insurance.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>EMI Calculator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="back">‹</div>
+    <div class="title">EMI CALCULATOR</div>
+    <button id="installBtn" class="icon-btn" hidden aria-label="Install app">▣</button>
+  </header>
+
+  <main>
+    <section class="card input-card">
+      <div class="grid two">
+        <label>Loan Amount
+          <div class="input-wrap"><span>₹</span><input id="loan" type="number" min="0" max="1150000" step="1" value="825000" inputmode="numeric"></div>
+        </label>
+        <label>Customer Type
+          <select id="customer">
+            <option value="SAL">SAL</option>
+            <option value="SEMP">SEMP</option>
+          </select>
+        </label>
+        <label>Offer Type
+          <select id="offer">
+            <option value="New">New</option>
+            <option value="PLTB">PLTB</option>
+          </select>
+        </label>
+        <label>Auto IRR
+          <div class="readonly"><span id="irr">19.25%</span><span class="info">i</span></div>
+        </label>
+      </div>
+
+      <label class="tenure-label">Tenure <span id="tenureText">48 Months</span></label>
+      <div class="tenure-row">
+        <input id="tenure" type="range" min="0" max="100" value="48">
+        <output id="tenureOut">48</output>
+      </div>
+      <div class="chips">
+        <button data-tenure="33">33</button><button data-tenure="36">36</button>
+        <button data-tenure="42">42</button><button class="active" data-tenure="48">48</button>
+        <button data-tenure="51">51</button><button data-tenure="63">63</button>
+      </div>
+    </section>
+
+    <section class="card breakdown">
+      <div class="section-head">▤ &nbsp;Calculation Breakdown</div>
+      <div class="rows">
+        <div><span>Base Loan</span><strong id="baseLoan">₹8,25,000.00</strong></div>
+        <div><span>Processing Fee (4.13%)</span><strong id="processing">₹34,072.50</strong></div>
+        <div><span>Insurance</span><strong id="insurance">₹24,500.00</strong></div>
+      </div>
+      <div class="total"><span>Total Finance Amount</span><strong id="finance">₹8,83,572.50</strong></div>
+      <div class="emi-box"><div class="rupee">₹</div><div><small>Monthly EMI</small><b id="emi">₹26,535.62</b></div></div>
+      <div class="stats">
+        <div><span>◉</span><small>Total Interest</small><b id="interest">₹3,90,136.96</b></div>
+        <div><span>◉</span><small>Total Amount Paid</small><b id="paid">₹12,73,709.96</b></div>
+      </div>
+      <div class="actions">
+        <button id="calc" class="primary">▣ &nbsp; CALCULATE EMI</button>
+        <button id="download" class="secondary">⇩ &nbsp; DOWNLOAD RESULT</button>
+        <button id="amort" class="secondary">▥ &nbsp; AMORTIZATION</button>
+      </div>
+    </section>
+
+    <section class="card slab">
+      <button class="slab-head" id="slabToggle">▥ &nbsp; Rate Slab <span>⌃</span></button>
+      <div class="slab-body" id="slabBody">
+        <p>IRR is automatically selected from the loan amount and customer/offer type.</p>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Loan Amount</th><th>SAL New</th><th>SAL PLTB</th><th>SEMP New</th><th>SEMP PLTB</th></tr></thead>
+            <tbody id="slabTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="amortSection" class="card amort" hidden>
+      <div class="section-head">▤ &nbsp; Amortization Schedule</div>
+      <div class="table-scroll"><table><thead><tr><th>Month</th><th>EMI</th><th>Interest</th><th>Principal</th><th>Balance</th></tr></thead><tbody id="amortTable"></tbody></table></div>
+    </section>
+
+    <footer id="stamp"></footer>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>

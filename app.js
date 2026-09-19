@@ -1,0 +1,102 @@
+const slabs=[
+["40,000 – 1,49,999",40000,149999,29.99,29.99,29.99,29.99],
+["1,50,000 – 2,29,999",150000,229999,29.99,29.99,29.99,29.99],
+["2,30,000 – 2,99,999",230000,299999,29.99,29.99,29.99,29.99],
+["3,00,000 – 3,34,999",300000,334999,27.75,26.50,28.00,26.99],
+["3,35,000 – 3,99,999",335000,399999,24.75,23.25,25.25,23.75],
+["4,00,000 – 4,49,999",400000,449999,23.75,22.25,24.25,22.75],
+["4,50,000 – 4,99,999",450000,499999,22.25,21.75,23.25,22.50],
+["5,00,000 – 5,49,999",500000,549999,21.75,20.75,22.25,21.25],
+["5,50,000 – 5,74,999",550000,574999,21.25,20.75,21.75,21.25],
+["5,75,000 – 6,24,999",575000,624999,20.75,20.25,21.25,20.75],
+["6,25,000 – 6,49,999",625000,649999,20.00,19.75,20.25,null],
+["6,50,000 – 6,99,999",650000,699999,19.50,19.50,20.00,null],
+["7,00,000 – 7,49,999",700000,749999,19.25,19.25,19.75,null],
+["7,50,000 – 7,99,999",750000,799999,19.25,19.25,19.75,null],
+["8,00,000 – 11,50,000",800000,1150000,19.25,19.25,19.75,null]
+];
+
+const $=id=>document.getElementById(id);
+const money=n=>"₹"+Number(n||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+function getIRR(amount,customer,offer){
+  const row=slabs.find(x=>amount>=x[1]&&amount<=x[2]);
+  if(!row)return null;
+  const idx=customer==="SAL"?(offer==="New"?3:4):(offer==="New"?5:6);
+  return row[idx];
+}
+function emi(P,annual,n){
+  if(n<=0||P<=0||annual==null)return 0;
+  const r=annual/100/12;
+  return P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+}
+function calc(){
+  const loan=Number($("loan").value)||0, customer=$("customer").value, offer=$("offer").value, n=Number($("tenure").value)||0;
+  const irr=getIRR(loan,customer,offer);
+  $("irr").textContent=irr==null?"—":irr.toFixed(2)+"%";
+  const fee=loan*0.0413;
+  const insurance=loan>500000?24500:(loan>0?20000:0);
+  const finance=loan+fee+insurance;
+  const monthly=emi(finance,irr,n);
+  const paid=monthly*n, interest=Math.max(0,paid-finance);
+  $("baseLoan").textContent=money(loan);
+  $("processing").textContent=money(fee);
+  $("insurance").textContent=money(insurance);
+  $("finance").textContent=money(finance);
+  $("emi").textContent=n>0&&irr!=null?money(monthly):"—";
+  $("interest").textContent=n>0&&irr!=null?money(interest):"—";
+  $("paid").textContent=n>0&&irr!=null?money(paid):"—";
+  $("tenureText").textContent=n+" Months";
+  $("tenureOut").value=n;
+  buildAmort(finance,irr,n,monthly);
+}
+function buildAmort(P,annual,n,pmt){
+  const body=$("amortTable"); body.innerHTML="";
+  if(!P||!annual||!n)return;
+  let bal=P, r=annual/100/12;
+  for(let m=1;m<=n;m++){
+    let interest=bal*r, principal=pmt-interest, payment=pmt;
+    if(m===n){principal=bal;payment=principal+interest;bal=0}
+    else bal-=principal;
+    body.insertAdjacentHTML("beforeend",`<tr><td>${m}</td><td>${money(payment)}</td><td>${money(interest)}</td><td>${money(principal)}</td><td>${money(Math.max(0,bal))}</td></tr>`);
+  }
+}
+function stamp(){const d=new Date();$("stamp").textContent=`Date: ${d.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}   Time: ${d.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;}
+function showToast(t){const x=$("toast");x.textContent=t;x.classList.add("show");setTimeout(()=>x.classList.remove("show"),2200)}
+async function downloadResult(){
+  const loan=Number($("loan").value)||0, irr=$("irr").textContent, n=Number($("tenure").value);
+  const w=1080,h=1350,c=document.createElement("canvas");c.width=w;c.height=h;const ctx=c.getContext("2d");
+  ctx.fillStyle="#f4f7fb";ctx.fillRect(0,0,w,h);ctx.fillStyle="#123d72";ctx.fillRect(0,0,w,125);
+  ctx.fillStyle="#fff";ctx.font="bold 42px Arial";ctx.fillText("EMI CALCULATOR",60,78);
+  ctx.fillStyle="#123d72";ctx.font="bold 30px Arial";ctx.fillText("Calculation Result",55,185);
+  const lines=[
+    ["Loan Amount",money(loan)],["IRR Rate",irr],["Tenure",n+" Months"],
+    ["Processing Fee (4.13%)",$("processing").textContent],["Insurance",$("insurance").textContent],
+    ["Total Finance Amount",$("finance").textContent]
+  ];
+  let y=245;ctx.font="24px Arial";
+  for(const [a,b] of lines){ctx.fillStyle="#49627e";ctx.fillText(a,60,y);ctx.fillStyle="#12365f";ctx.font="bold 25px Arial";ctx.fillText(b,690,y);ctx.font="24px Arial";y+=58}
+  ctx.fillStyle="#0aa56d";ctx.roundRect(45,y+15,990,145,18);ctx.fill();ctx.fillStyle="#fff";ctx.font="22px Arial";ctx.fillText("MONTHLY EMI",80,y+65);ctx.font="bold 48px Arial";ctx.fillText($("emi").textContent,80,y+122);
+  y+=205;ctx.fillStyle="#123d72";ctx.font="bold 28px Arial";ctx.fillText("Repayment Summary",55,y);
+  y+=55;ctx.font="24px Arial";ctx.fillStyle="#12365f";ctx.fillText("Total Interest",60,y);ctx.fillText($("interest").textContent,690,y);
+  y+=55;ctx.fillText("Total Amount Paid",60,y);ctx.fillText($("paid").textContent,690,y);
+  y+=80;ctx.fillStyle="#5e7590";ctx.font="20px Arial";ctx.fillText(new Date().toLocaleString("en-IN"),60,y);
+  ctx.fillText("Generated by EMI Calculator",60,y+35);
+  c.toBlob(blob=>{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`EMI_Result_${Date.now()}.png`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);},"image/png");
+  showToast("Result image downloaded");
+}
+function fillTable(){
+  $("slabTable").innerHTML=slabs.map(s=>`<tr><td>${s[0]}</td><td>${s[3]?.toFixed(2)??"—"}</td><td>${s[4]?.toFixed(2)??"—"}</td><td>${s[5]?.toFixed(2)??"—"}</td><td>${s[6]?.toFixed(2)??"—"}</td></tr>`).join("");
+}
+["loan","customer","offer","tenure"].forEach(id=>$(id).addEventListener("input",calc));
+$("tenure").addEventListener("input",()=>document.querySelectorAll(".chips button").forEach(b=>b.classList.toggle("active",Number(b.dataset.tenure)===Number($("tenure").value))));
+document.querySelectorAll(".chips button").forEach(b=>b.onclick=()=>{$("tenure").value=b.dataset.tenure;calc();document.querySelectorAll(".chips button").forEach(x=>x.classList.toggle("active",x===b))});
+$("calc").onclick=()=>{calc();showToast("EMI calculated")};
+$("download").onclick=downloadResult;
+$("amort").onclick=()=>{const s=$("amortSection");s.hidden=!s.hidden;if(!s.hidden)s.scrollIntoView({behavior:"smooth"})};
+$("slabToggle").onclick=()=>{$("slabBody").hidden=!$("slabBody").hidden};
+fillTable();calc();stamp();setInterval(stamp,1000);
+
+let deferredPrompt;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;$("installBtn").hidden=false});
+$("installBtn").onclick=async()=>{if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;$("installBtn").hidden=true}};
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));
